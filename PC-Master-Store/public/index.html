@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PC Master | Ultimate Store</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            <i class="fa-solid fa-gamepad"></i> PC Master
+        </div>
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="Search..." onkeyup="searchProducts(this.value)">
+            <button><i class="fa-solid fa-search"></i></button>
+        </div>
+        <div class="header-actions">
+            <div class="cart-icon" onclick="openCart()">
+                <i class="fa-solid fa-cart-shopping"></i> <span id="cart-count">0</span>
+            </div>
+            <button class="icon-btn" onclick="toggleLanguage()"><span id="lang-text">AR</span></button>
+        </div>
+    </header>
+
+    <section class="hero-banner">
+        <h1>LEVEL UP YOUR SETUP <i class="fa-solid fa-bolt"></i></h1>
+        <p>Premium Gear for Elite Gamers</p>
+    </section>
+
+    <div class="container layout-grid">
+        
+        <aside class="sidebar">
+            <div class="filter-group">
+                <h3><i class="fa-solid fa-filter"></i> Filters</h3>
+                
+                <div class="filter-section">
+                    <h4>Categories</h4>
+                    <ul class="category-list">
+                        <li onclick="filterProducts('all')" class="active-cat"><i class="fa-solid fa-layer-group"></i> All</li>
+                        <li onclick="filterProducts('pc')"><i class="fa-solid fa-desktop"></i> PCs</li>
+                        <li onclick="filterProducts('monitor')"><i class="fa-solid fa-tv"></i> Monitors</li>
+                        <li onclick="filterProducts('cpu')"><i class="fa-solid fa-microchip"></i> CPU</li>
+                    </ul>
+                </div>
+
+                <div class="filter-section">
+                    <h4>Brands</h4>
+                    <label class="custom-checkbox">
+                        <input type="checkbox" onchange="filterByBrand('Nvidia')"> 
+                        <span class="checkmark"></span> Nvidia
+                    </label>
+                    <label class="custom-checkbox">
+                        <input type="checkbox" onchange="filterByBrand('AMD')"> 
+                        <span class="checkmark"></span> AMD
+                    </label>
+                    <label class="custom-checkbox">
+                        <input type="checkbox" onchange="filterByBrand('Intel')"> 
+                        <span class="checkmark"></span> Intel
+                    </label>
+                </div>
+            </div>
+        </aside>
+
+        <main>
+            <div class="product-grid" id="products-container"></div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="cart-modal">
+        <div class="modal-content cart-content">
+            <button class="close-modal" onclick="closeCart()">✕</button>
+            <h2 id="cart-title">Cart</h2>
+            <div id="cart-items-container" class="cart-items-list"></div>
+            <div class="cart-footer">
+                <div class="cart-total">Total: <span id="cart-total-price">0 $</span></div>
+                <button class="cta-btn" onclick="checkout()">Checkout</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="toast-container" id="toast-box"></div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

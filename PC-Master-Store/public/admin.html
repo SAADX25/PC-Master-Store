@@ -21,6 +21,10 @@
         .delete-btn { background: #ff3333; color: white; padding: 5px 10px; width: auto; font-size: 12px; }
         .delete-btn:hover { background: #cc0000; }
         .product-mini-img { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; }
+        
+        /* تنسيق زر الـ AI الجديد */
+        .ai-btn { background: linear-gradient(45deg, #9b59b6, #8e44ad); color: white; width: auto; min-width: 120px; transition: 0.3s; }
+        .ai-btn:hover { transform: scale(1.05); box-shadow: 0 0 10px #9b59b6; }
     </style>
 </head>
 <body>
@@ -36,12 +40,19 @@
         <h1>إضافة منتج جديد</h1>
         
         <form id="addProductForm" enctype="multipart/form-data">
-            <div style="display:flex; gap:10px;">
-                <input type="text" name="name_ar" placeholder="الاسم (عربي)" required>
-                <input type="text" name="name_en" placeholder="Name (English)" required>
+            
+            <div style="display:flex; gap:10px; align-items: flex-start;">
+                <input type="text" name="name_ar" placeholder="الاسم (عربي)" style="flex:1" required>
+                
+                <div style="flex:1; display:flex; flex-direction: column;">
+                    <input type="text" id="pNameEn" name="name_en" placeholder="Name (English)" required>
+                    <button type="button" onclick="askGemini()" class="ai-btn">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> توليد الوصف (AI)
+                    </button>
+                </div>
             </div>
             
-            <div style="display:flex; gap:10px;">
+            <div style="display:flex; gap:10px; margin-top: 10px;">
                 <input type="number" name="price" placeholder="السعر ($)" required>
                 <input type="number" name="quantity" placeholder="الكمية (العدد)" required>
             </div>
@@ -77,12 +88,12 @@
             <label style="color:#00ff88; display:block; margin-bottom:5px;">صورة المنتج (من جهازك):</label>
             <input type="file" name="image" accept="image/*" required>
 
-            <textarea name="description_ar" rows="2" placeholder="وصف عربي (المواصفات)"></textarea>
-            <textarea name="description_en" rows="2" placeholder="English Description"></textarea>
+            <textarea name="description_ar" rows="3" placeholder="وصف عربي (المواصفات)"></textarea>
+            <textarea name="description_en" rows="3" placeholder="English Description"></textarea>
 
             <label style="color:white;"><input type="checkbox" name="is_new" style="width:auto;"> منتج جديد</label>
 
-            <button type="submit">حفظ ورفع الصورة</button>
+            <button type="submit" style="margin-top: 15px;">حفظ ورفع الصورة</button>
         </form>
 
         <h2 style="margin-top:40px; border-top:1px solid #333; padding-top:20px;">إدارة المخزون</h2>
@@ -113,6 +124,40 @@
                 loadProductsTable(); 
             } else {
                 alert("خطأ في البيانات");
+            }
+        }
+
+        // --- دالة الذكاء الاصطناعي الجديدة ---
+        async function askGemini() {
+            const nameEn = document.getElementById('pNameEn').value;
+            if (!nameEn) return alert("يرجى كتابة اسم المنتج بالإنجليزية أولاً!");
+
+            const btn = document.querySelector('.ai-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الكتابة...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/ai/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productName: nameEn })
+                });
+
+                const data = await res.json();
+                
+                if (data.ar && data.en) {
+                    document.querySelector('textarea[name="description_ar"]').value = data.ar;
+                    document.querySelector('textarea[name="description_en"]').value = data.en;
+                } else {
+                    alert("لم يتمكن AI من توليد الوصف، حاول مرة أخرى.");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("خطأ في الاتصال بالخادم");
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
             }
         }
 

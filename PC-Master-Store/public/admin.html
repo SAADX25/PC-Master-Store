@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* نفس الستايل السابق */
+        /* ستايل خاص بلوحة التحكم */
         body { padding: 40px; background-color: #121212; color: white; font-family: 'Cairo', sans-serif; }
         .login-container { max-width: 350px; margin: 80px auto; text-align: center; padding: 40px; background: #1e1e1e; border-radius: 15px; border: 1px solid #333; }
         .admin-container { max-width: 800px; margin: 0 auto; background: #1e1e1e; padding: 30px; border-radius: 15px; border: 1px solid #00ff88; display: none; }
@@ -22,7 +22,7 @@
         .delete-btn:hover { background: #cc0000; }
         .product-mini-img { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; }
         
-        /* تنسيق زر الـ AI الجديد */
+        /* تنسيق زر الـ AI */
         .ai-btn { background: linear-gradient(45deg, #9b59b6, #8e44ad); color: white; width: auto; min-width: 120px; transition: 0.3s; }
         .ai-btn:hover { transform: scale(1.05); box-shadow: 0 0 10px #9b59b6; }
     </style>
@@ -113,21 +113,47 @@
     </div>
 
     <script>
-        const CORRECT_USER = "SAADX";
-        const CORRECT_PASS = "Saad2009";
+        // --- دالة تسجيل الدخول الجديدة (تتحقق من السيرفر) ---
+        async function checkLogin() {
+            const userInput = document.getElementById('adminUser');
+            const passInput = document.getElementById('adminPass');
+            const btn = document.querySelector('.login-container button');
+            
+            const username = userInput.value;
+            const password = passInput.value;
 
-        function checkLogin() {
-            if (document.getElementById('adminUser').value === CORRECT_USER && 
-                document.getElementById('adminPass').value === CORRECT_PASS) {
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('adminPanel').style.display = 'block';
-                loadProductsTable(); 
-            } else {
-                alert("خطأ في البيانات");
+            if(!username || !password) return alert("يرجى ملء البيانات");
+
+            const originalText = btn.innerHTML;
+            btn.innerHTML = "جاري التحقق...";
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    document.getElementById('loginScreen').style.display = 'none';
+                    document.getElementById('adminPanel').style.display = 'block';
+                    loadProductsTable(); 
+                } else {
+                    alert(data.message || "بيانات الدخول خاطئة");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("خطأ في الاتصال بالسيرفر");
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
             }
         }
 
-        // --- دالة الذكاء الاصطناعي الجديدة ---
+        // --- دالة الذكاء الاصطناعي ---
         async function askGemini() {
             const nameEn = document.getElementById('pNameEn').value;
             if (!nameEn) return alert("يرجى كتابة اسم المنتج بالإنجليزية أولاً!");
@@ -143,6 +169,12 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ productName: nameEn })
                 });
+
+                if (res.status === 403) {
+                    alert("انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى");
+                    location.reload();
+                    return;
+                }
 
                 const data = await res.json();
                 
@@ -161,6 +193,7 @@
             }
         }
 
+        // --- إضافة منتج ---
         document.getElementById('addProductForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
@@ -172,6 +205,12 @@
                     body: formData 
                 });
 
+                if (response.status === 403) {
+                    alert("غير مصرح لك! الرجاء تسجيل الدخول.");
+                    location.reload();
+                    return;
+                }
+
                 if(response.ok) {
                     alert('تم الرفع والحفظ بنجاح! ✅');
                     e.target.reset();
@@ -182,29 +221,39 @@
             } catch (error) { console.error(error); }
         });
 
+        // --- تحميل الجدول ---
         async function loadProductsTable() {
             const res = await fetch('/api/products');
             const data = await res.json();
             const tbody = document.getElementById('productsListBody');
             tbody.innerHTML = '';
 
-            data.data.forEach(p => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td><img src="${p.image}" class="product-mini-img"></td>
-                        <td>${p.name_ar}</td>
-                        <td>${p.price}$</td>
-                        <td style="color:#aaa; font-size:12px;">${p.delivery_status || 'غير محدد'}</td>
-                        <td><button class="delete-btn" onclick="deleteProduct(${p.id})">حذف</button></td>
-                    </tr>
-                `;
-            });
+            if (data.data) {
+                data.data.forEach(p => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><img src="${p.image}" class="product-mini-img"></td>
+                            <td>${p.name_ar}</td>
+                            <td>${p.price}$</td>
+                            <td style="color:#aaa; font-size:12px;">${p.delivery_status || 'غير محدد'}</td>
+                            <td><button class="delete-btn" onclick="deleteProduct(${p.id})">حذف</button></td>
+                        </tr>
+                    `;
+                });
+            }
         }
 
+        // --- حذف منتج ---
         async function deleteProduct(id) {
             if(!confirm("هل أنت متأكد من حذف هذا المنتج نهائياً؟")) return;
             try {
                 const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+                
+                if (res.status === 403) {
+                    alert("غير مصرح لك بالحذف! الرجاء تسجيل الدخول.");
+                    return;
+                }
+
                 if(res.ok) loadProductsTable();
                 else alert("فشل الحذف");
             } catch(e) { console.error(e); }

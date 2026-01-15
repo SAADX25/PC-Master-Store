@@ -3,8 +3,12 @@ const router = express.Router();
 const db = require('../database');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 
-// إعدادات رفع الصور
+// التأكد من وجود مجلد الصور
+const dir = './public/images';
+if (!fs.existsSync(dir)){ fs.mkdirSync(dir, { recursive: true }); }
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) { cb(null, 'public/images/') },
   filename: function (req, file, cb) {
@@ -14,7 +18,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// جلب المنتجات
 router.get('/products', (req, res) => {
   const { category, search } = req.query;
   let sql = "SELECT * FROM products WHERE 1=1";
@@ -28,8 +31,9 @@ router.get('/products', (req, res) => {
   });
 });
 
-// إضافة منتج (POST)
+// إضافة منتج (مع البيانات الجديدة)
 router.post('/products', upload.single('image'), (req, res) => {
+  // استقبال البيانات الجديدة هنا
   const { name_ar, name_en, price, description_ar, description_en, category, brand, is_new, quantity, release_date, delivery_status } = req.body;
   
   const imagePath = req.file ? `/images/${req.file.filename}` : '/images/default.jpg';
@@ -37,7 +41,14 @@ router.post('/products', upload.single('image'), (req, res) => {
   const sql = `INSERT INTO products (name_ar, name_en, price, image, description_ar, description_en, category, brand, is_new, quantity, release_date, delivery_status) 
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
   
-  const params = [name_ar, name_en, price, imagePath, description_ar, description_en, category, brand, is_new || 0, quantity || 1, release_date || '2025', delivery_status || 'Available'];
+  const params = [
+      name_ar, name_en, price, imagePath, 
+      description_ar, description_en, 
+      category, brand, is_new === 'on' || is_new == 1 ? 1 : 0, 
+      quantity || 1, 
+      release_date || '2025',      // حفظ تاريخ الإصدار
+      delivery_status || 'Available' // حفظ حالة التوصيل
+  ];
 
   db.run(sql, params, function(err) {
     if (err) return res.status(400).json({ "error": err.message });
@@ -45,7 +56,6 @@ router.post('/products', upload.single('image'), (req, res) => {
   });
 });
 
-// حذف منتج
 router.delete('/products/:id', (req, res) => {
     const id = req.params.id;
     db.run("DELETE FROM products WHERE id = ?", id, function(err) {

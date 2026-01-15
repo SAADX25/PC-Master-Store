@@ -18,6 +18,10 @@
             <button><i class="fa-solid fa-search"></i></button>
         </div>
         <div class="header-actions">
+            <button class="icon-btn" onclick="toggleTheme()" title="Toggle Theme">
+                <i class="fa-solid fa-moon" id="theme-icon"></i>
+            </button>
+            
             <div class="cart-icon" onclick="openCart()">
                 <i class="fa-solid fa-cart-shopping"></i> <span id="cart-count">0</span>
             </div>
@@ -67,6 +71,32 @@
         <main>
             <div class="product-grid" id="products-container"></div>
         </main>
+    </div>
+
+    <section class="brands-section">
+        <div class="brands-container" style="max-width: 1400px; margin: 0 auto; padding: 0 20px;">
+            <div class="section-header">
+                <h2>Our Partners</h2>
+            </div>
+            <div class="brand-grid">
+                <div class="brand-box"><img src="/images/brands/nvidia.svg" alt="Nvidia"></div>
+                <div class="brand-box"><img src="/images/brands/amd.png" alt="AMD"></div>
+                <div class="brand-box"><img src="/images/brands/intel.png" alt="Intel"></div>
+                <div class="brand-box"><img src="/images/brands/asus.png" alt="Asus"></div>
+                <div class="brand-box"><img src="/images/brands/hyperx.svg" alt="HyperX"></div>
+                <div class="brand-box"><img src="/images/brands/logitech.svg" alt="Logitech"></div>
+                <div class="brand-box"><img src="/images/brands/lenovo.png" alt="Lenovo"></div>
+                <div class="brand-box"><img src="/images/brands/hp.svg" alt="HP"></div>
+                <div class="brand-box"><img src="/images/brands/acer.png" alt="Acer"></div>
+                <div class="brand-box"><img src="/images/brands/Zowie_Logo.png" alt="Zowie"></div>
+                <div class="brand-box"><img src="/images/brands/adata.svg" alt="Adata"></div>
+                <div class="brand-box"><img src="/images/brands/cooler.svg" alt="cooler"></div>
+                </div>
+        </div>
+    </section>
+
+    <div class="modal-overlay" id="product-modal">
+        <div class="modal-content"></div>
     </div>
 
     <div class="modal-overlay" id="cart-modal">

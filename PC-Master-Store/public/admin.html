@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>لوحة التحكم الشاملة</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* ... نفس الستايل السابق ... */
+        body { padding: 40px; background-color: #121212; color: white; font-family: 'Cairo', sans-serif; }
+        .login-container { max-width: 350px; margin: 80px auto; text-align: center; padding: 40px; background: #1e1e1e; border-radius: 15px; border: 1px solid #333; }
+        .admin-container { max-width: 800px; margin: 0 auto; background: #1e1e1e; padding: 30px; border-radius: 15px; border: 1px solid #00ff88; display: none; }
+        
+        input, select, textarea { width: 100%; padding: 12px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 5px; margin-bottom: 10px; }
+        button { width: 100%; padding: 12px; background: #00ff88; color: #000; font-weight: bold; cursor: pointer; border: none; border-radius: 5px; }
+        button:hover { background: #00cc6a; }
+
+        /* ستايل جدول المنتجات */
+        .products-table { width: 100%; margin-top: 40px; border-collapse: collapse; }
+        .products-table th, .products-table td { padding: 10px; border-bottom: 1px solid #333; text-align: right; }
+        .products-table th { color: #00ff88; }
+        .delete-btn { background: #ff3333; color: white; padding: 5px 10px; width: auto; font-size: 12px; }
+        .delete-btn:hover { background: #cc0000; }
+        .product-mini-img { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <div class="login-container" id="loginScreen">
+        <h2>تسجيل الدخول</h2>
+        <input type="text" id="adminUser" placeholder="User">
+        <input type="password" id="adminPass" placeholder="Pass">
+        <button onclick="checkLogin()">دخول</button>
+    </div>
+
+    <div class="admin-container" id="adminPanel">
+        <h1>إضافة منتج جديد</h1>
+        
+        <form id="addProductForm" enctype="multipart/form-data">
+            <div style="display:flex; gap:10px;">
+                <input type="text" name="name_ar" placeholder="الاسم (عربي)" required>
+                <input type="text" name="name_en" placeholder="Name (English)" required>
+            </div>
+            
+            <div style="display:flex; gap:10px;">
+                <input type="number" name="price" placeholder="السعر ($)" required>
+                <input type="number" name="quantity" placeholder="الكمية (العدد)" required>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <select name="brand">
+                    <option value="Nvidia">Nvidia</option>
+                    <option value="AMD">AMD</option>
+                    <option value="Intel">Intel</option>
+                    <option value="Corsair">Corsair</option>
+                    <option value="Samsung">Samsung</option>
+                    <option value="Other">Other</option>
+                </select>
+                <select name="category">
+                    <option value="pc">PC</option>
+                    <option value="monitor">Monitor</option>
+                    <option value="cpu">CPU</option>
+                    <option value="gpu">GPU</option>
+                    <option value="ram">RAM</option>
+                </select>
+            </div>
+
+            <label style="color:#00ff88; display:block; margin-bottom:5px;">صورة المنتج (من جهازك):</label>
+            <input type="file" name="image" accept="image/*" required>
+
+            <textarea name="description_ar" rows="2" placeholder="وصف عربي"></textarea>
+            <textarea name="description_en" rows="2" placeholder="English Description"></textarea>
+
+            <label style="color:white;"><input type="checkbox" name="is_new" style="width:auto;"> منتج جديد</label>
+
+            <button type="submit">حفظ ورفع الصورة</button>
+        </form>
+
+        <h2 style="margin-top:40px; border-top:1px solid #333; padding-top:20px;">المنتجات الحالية (إدارة المخزون)</h2>
+        <table class="products-table">
+            <thead>
+                <tr>
+                    <th>الصورة</th>
+                    <th>الاسم</th>
+                    <th>السعر</th>
+                    <th>الكمية</th>
+                    <th>حذف</th>
+                </tr>
+            </thead>
+            <tbody id="productsListBody">
+                </tbody>
+        </table>
+        
+        <a href="index.html" style="display:block; text-align:center; margin-top:20px; color:#aaa;">العودة للمتجر</a>
+    </div>
+
+    <script>
+        const CORRECT_USER = "SAADX";
+        const CORRECT_PASS = "Saad2009";
+
+        function checkLogin() {
+            if (document.getElementById('adminUser').value === CORRECT_USER && 
+                document.getElementById('adminPass').value === CORRECT_PASS) {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                loadProductsTable(); // تحميل الجدول عند الدخول
+            } else {
+                alert("خطأ في البيانات");
+            }
+        }
+
+        // 1. إضافة منتج (باستخدام FormData لرفع الملفات)
+        document.getElementById('addProductForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // FormData يجمع كل المدخلات والملفات تلقائياً
+            const formData = new FormData(e.target);
+            // تحويل الـ checkbox لقيمة رقمية يدوياً
+            formData.set('is_new', e.target.is_new.checked ? 1 : 0);
+
+            try {
+                const response = await fetch('/api/products', {
+                    method: 'POST',
+                    body: formData // نرسل الـ FormData مباشرة (بدون JSON)
+                });
+
+                if(response.ok) {
+                    alert('تم الرفع والحفظ بنجاح! ✅');
+                    e.target.reset();
+                    loadProductsTable(); // تحديث الجدول
+                } else {
+                    alert('فشل الرفع ❌');
+                }
+            } catch (error) { console.error(error); }
+        });
+
+        // 2. تحميل جدول المنتجات
+        async function loadProductsTable() {
+            const res = await fetch('/api/products');
+            const data = await res.json();
+            const tbody = document.getElementById('productsListBody');
+            tbody.innerHTML = '';
+
+            data.data.forEach(p => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><img src="${p.image}" class="product-mini-img"></td>
+                        <td>${p.name_ar}</td>
+                        <td>${p.price}$</td>
+                        <td>${p.quantity || 1}</td>
+                        <td><button class="delete-btn" onclick="deleteProduct(${p.id})">حذف</button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        // 3. حذف منتج
+        async function deleteProduct(id) {
+            if(!confirm("هل أنت متأكد من حذف هذا المنتج نهائياً؟")) return;
+
+            try {
+                const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+                if(res.ok) {
+                    loadProductsTable(); // تحديث الجدول بعد الحذف
+                } else {
+                    alert("فشل الحذف");
+                }
+            } catch(e) { console.error(e); }
+        }
+    </script>
+</body>
+</html>
